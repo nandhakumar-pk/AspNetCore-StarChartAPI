@@ -19,35 +19,35 @@ namespace StarChart.Controllers
             _context = context;
         }
 
-        [HttpGet("{id:int}")]
-        public async Task<IActionResult> GetById(int Id)
+        [HttpGet("{id:int}",Name = "GetById")]
+        public IActionResult GetById(int Id)
         {
-            var celestialObject = await _context.CelestialObjects.FirstOrDefaultAsync(e => e.Id == Id);
+            var celestialObject = _context.CelestialObjects.Find(Id);
             if (celestialObject == null)
                 return NotFound();
-            var satellite = await _context.CelestialObjects.FindAsync(celestialObject.Id);
-            if (satellite != null)
-                celestialObject.Satellites.Add(satellite);
+            celestialObject.Satellites = _context.CelestialObjects.Where(e => e.OrbitedObjectId == Id).ToList();
             return Ok(celestialObject);
         }
 
         [HttpGet("{name}")]
-        public async Task<IActionResult> GetByName(string name)
+        public IActionResult GetByName(string name)
         {
-            var celestialObject = await _context.CelestialObjects.FirstOrDefaultAsync(e => e.Name == name);
-            if (celestialObject == null)
+            var celestialObjects = _context.CelestialObjects.Where(e => e.Name == name).ToList();
+            if (!celestialObjects.Any())
                 return NotFound();
-            var satellite = await _context.CelestialObjects.FindAsync(celestialObject.Id);    
-            if (satellite != null)
-                celestialObject.Satellites.Add(satellite);
-            return Ok(celestialObject);
+            foreach(var celestialObject in celestialObjects)
+            celestialObject.Satellites = _context.CelestialObjects.Where(e => e.OrbitedObjectId == celestialObject.Id).ToList();    
+            return Ok(celestialObjects);
         }
 
         [HttpGet]
-        public void GetAll()
+        public IActionResult GetAll()
         {
-           // var celestials = _context.CelestialObjects.ToArrayAsync();
-           // return celestials;
+            var celestialObjects = _context.CelestialObjects.ToList();
+            foreach (var celestialObject in celestialObjects)
+                celestialObject.Satellites = _context.CelestialObjects.Where(e => e.OrbitedObjectId == celestialObject.Id).ToList();
+            return Ok(celestialObjects);
+
         }
     }
 }
